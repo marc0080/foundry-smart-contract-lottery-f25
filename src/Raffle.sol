@@ -10,16 +10,11 @@ import {VRFConsumerBaseV2} from "@chainlink/contracts/src/v0.8/vrf/VRFConsumerBa
  * @notice This contract is for creating sample Raffle
  * @dev Implements Chainlink VRFv2
  */
-
 contract Raffle is VRFConsumerBaseV2 {
     error Raffle__NotEnoughEthSent();
     error Raffle__TransferFailed();
     error Raffle__RaffleNotOpen();
-    error Raffle__UpkeepNotNeeded(
-        uint256 currentBalance,
-        uint256 numPlayers,
-        uint256 raffleState
-    );
+    error Raffle__UpkeepNotNeeded(uint256 currentBalance, uint256 numPlayers, uint256 raffleState);
 
     /* Type declarations */
     enum RaffleState {
@@ -27,7 +22,9 @@ contract Raffle is VRFConsumerBaseV2 {
         CALCULATING
     }
 
-    /**State Variable */
+    /**
+     * State Variable
+     */
     uint16 private constant REQUEST_CONFIRMATIONS = 3;
     uint32 private constant NUM_WORDS = 2;
 
@@ -44,7 +41,9 @@ contract Raffle is VRFConsumerBaseV2 {
     address private s_recentWinner;
     RaffleState private s_raffleState;
 
-    /**Events */
+    /**
+     * Events
+     */
     event EnteredRaffle(address indexed player);
     event PickedWinner(address indexed winner);
     event RequestedRaffleWinner(uint256 indexed requestId);
@@ -91,9 +90,17 @@ contract Raffle is VRFConsumerBaseV2 {
      * 3. The contract has ETH (ie players)
      * 4. (Implicit) The subscription is funded with LINK
      */
-    function checkUpkeep(
-        bytes memory /**checkData */
-    ) public view returns (bool upkeeepNeeded, bytes memory /**performData */) {
+    function checkUpkeep(bytes memory)
+        /**
+         * checkData
+         */
+        public
+        view
+        returns (bool upkeeepNeeded, bytes memory)
+    /**
+     * performData
+     */
+    {
         bool timeHasPassed = (block.timestamp - s_lastTimeStamp) >= i_interval;
         bool isOpen = RaffleState.OPEN == s_raffleState;
         bool hasBalance = address(this).balance > 0;
@@ -102,14 +109,10 @@ contract Raffle is VRFConsumerBaseV2 {
         return (upkeeepNeeded, "0x0");
     }
 
-    function performUpkeep(bytes calldata /*performData */) external {
-        (bool upkeepNeeded, ) = checkUpkeep("");
+    function performUpkeep(bytes calldata /*performData */ ) external {
+        (bool upkeepNeeded,) = checkUpkeep("");
         if (!upkeepNeeded) {
-            revert Raffle__UpkeepNotNeeded(
-                address(this).balance,
-                s_players.length,
-                uint256(s_raffleState)
-            );
+            revert Raffle__UpkeepNotNeeded(address(this).balance, s_players.length, uint256(s_raffleState));
         }
         //  Check if the time is passed
         if ((block.timestamp - s_lastTimeStamp) < i_interval) {
@@ -117,18 +120,17 @@ contract Raffle is VRFConsumerBaseV2 {
         }
         s_raffleState = RaffleState.CALCULATING;
         uint256 requestId = i_vrfCoordinator.requestRandomWords(
-            i_gasLane,
-            i_subscriptionId,
-            REQUEST_CONFIRMATIONS,
-            i_callbackGasLimit,
-            NUM_WORDS
+            i_gasLane, i_subscriptionId, REQUEST_CONFIRMATIONS, i_callbackGasLimit, NUM_WORDS
         );
         emit RequestedRaffleWinner(requestId);
     }
 
     // CEI : Checks , Effects, Interactions
     function fulfillRandomWords(
-        uint256 /**requestId*/,
+        uint256,
+        /**
+         * requestId
+         */
         uint256[] memory randomWords
     ) internal override {
         // Checks
@@ -141,13 +143,15 @@ contract Raffle is VRFConsumerBaseV2 {
         s_lastTimeStamp = block.timestamp;
         emit PickedWinner(winner);
         //Interactions
-        (bool success, ) = winner.call{value: address(this).balance}("");
+        (bool success,) = winner.call{value: address(this).balance}("");
         if (!success) {
             revert Raffle__TransferFailed();
         }
     }
 
-    /**Getter functions */
+    /**
+     * Getter functions
+     */
     function getEntranceFee() external view returns (uint256) {
         return i_entranceFee;
     }
