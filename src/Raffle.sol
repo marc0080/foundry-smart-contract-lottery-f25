@@ -91,12 +91,15 @@ contract Raffle is VRFConsumerBaseV2 {
      * 4. (Implicit) The subscription is funded with LINK
      */
     function checkUpkeep(bytes memory)
-        /**
-         * checkData
-         */
         public
         view
-        returns (bool upkeeepNeeded, bytes memory)
+        returns (
+            /**
+             * checkData
+             */
+            bool upkeeepNeeded,
+            bytes memory
+        )
     /**
      * performData
      */
